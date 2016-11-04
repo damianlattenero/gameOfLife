@@ -49,7 +49,10 @@ public class GameOfLifeGrid implements CellGrid {
 
     @Override
     public void setThreads(int threads) {
-
+        for(int n=0; n<threads; n++){
+            Thread t = new Thread();
+            t.run();
+        }
     }
 
     @Override
@@ -65,14 +68,13 @@ public class GameOfLifeGrid implements CellGrid {
                 this.vivirOMorir(row, col, grilla);
             }
         }
-        this.grid = grilla;
-
         this.generations++;
+        this.grid = grilla;
     }
 
     private void vivirOMorir(int col, int row, boolean[][] grilla) {
 
-        boolean[] vecinos = new boolean[8];
+        boolean[] vecinos = new boolean[10];
         try {
             vecinos[0] = grid[col - 1][row - 1];
             vecinos[1] = grid[col][row - 1];
@@ -119,6 +121,5 @@ public class GameOfLifeGrid implements CellGrid {
         if (vecinasVivas == 3 || vecinasVivas == 2) {
             grilla[col][row] = true;
         }
-
     }
 }
