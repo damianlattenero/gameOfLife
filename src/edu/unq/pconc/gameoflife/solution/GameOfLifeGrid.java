@@ -38,8 +38,8 @@ public class GameOfLifeGrid implements CellGrid {
 
     @Override
     public void resize(int widht, int height) {
-        this.dimension = new Dimension(20, 50);
-        this.grid = new boolean[20][50];
+        this.dimension = new Dimension(widht, height);
+        this.grid = new boolean[widht][height];
     }
 
     @Override
@@ -59,52 +59,65 @@ public class GameOfLifeGrid implements CellGrid {
 
     @Override
     public void next() {
+        boolean[][] grilla = new boolean[(int) this.dimension.getWidth()][(int) this.dimension.getHeight()];
         for (int row = 0; row < this.grid.length; row++) {
             for (int col = 0; col < this.grid[0].length; col++) {
-                this.vivirOMorir(col, row);
+                this.vivirOMorir(row, col, grilla);
             }
         }
+        this.grid = grilla;
+
         this.generations++;
     }
 
-    private void vivirOMorir(int col, int row) {
-        boolean estaViva = grid[row][col];
+    private void vivirOMorir(int col, int row, boolean[][] grilla) {
+
+        boolean[] vecinos = new boolean[8];
+        try {
+            vecinos[0] = grid[col - 1][row - 1];
+            vecinos[1] = grid[col][row - 1];
+            vecinos[2] = grid[col + 1][row - 1];
+            vecinos[3] = grid[col - 1][row];
+            vecinos[4] = grid[col + 1][row];
+            vecinos[5] = grid[col - 1][row + 1];
+            vecinos[6] = grid[col][row + 1];
+            vecinos[7] = grid[col + 1][row + 1];
+        } catch (Exception e) {
+            //
+        }
+
+
         int vecinasVivas = 0;
 
-        int rowStart = Math.max(row - 1, 0);
-        int rowFinish = Math.min(row + 1, grid.length - 1);
-        int colStart = Math.max(col - 1, 0);
-        int colFinish = Math.min(col + 1, grid.length - 1);
-
-        for (int curRow = rowStart; curRow <= rowFinish; curRow++) {
-            for (int curCol = colStart; curCol <= colFinish; curCol++) {
-                // do something
+        for (int elem = 0; elem <= 7; elem++) {
+            if (vecinos[elem] == true) {
+                vecinasVivas++;
             }
         }
-        if (estaViva) {
-            this.celdaVivaViveOMuere(col, row, vecinasVivas);
+        if (grid[col][row]) {
+            this.celdaVivaViveOMuere(col, row, vecinasVivas, grilla);
         } else {
-            this.celdaMuertaViveOMuere(col, row, vecinasVivas);
-
+            this.celdaMuertaViveOMuere(col, row, vecinasVivas, grilla);
         }
 
     }
 
-    private void celdaMuertaViveOMuere(int col, int row, int vecinasVivas) {
+    private void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas == 3) {
-            grid[row][col] = true;
+            grilla[col][row] = true;
         }
     }
 
-    private void celdaVivaViveOMuere(int col, int row, int vecinasVivas) {
+    private void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas < 2) {
-            grid[row][col] = false;
+            grilla[col][row] = false;
         }
         if (vecinasVivas > 3) {
-            grid[row][col] = false;
+            grilla[col][row] = false;
+
         }
-        if(vecinasVivas == 2 || vecinasVivas == 3){
-            grid[row][col] = true;
+        if (vecinasVivas == 3 || vecinasVivas == 2) {
+            grilla[col][row] = true;
         }
 
     }
