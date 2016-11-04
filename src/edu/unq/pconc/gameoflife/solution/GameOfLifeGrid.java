@@ -42,7 +42,7 @@ public class GameOfLifeGrid implements CellGrid{
 
     @Override
     public void clear() {
-
+        this.grid = new boolean[this.getDimension().width][this.getDimension().height];
     }
 
     @Override
