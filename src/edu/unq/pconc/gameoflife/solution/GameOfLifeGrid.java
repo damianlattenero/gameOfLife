@@ -12,7 +12,7 @@ public class GameOfLifeGrid implements CellGrid {
     private Dimension dimension;
     private boolean grid[][];
     private int generations;
-
+    private int threads;
 //    private Dimension dimension = new Dimension(50,50);
 
     public GameOfLifeGrid() {
@@ -49,7 +49,8 @@ public class GameOfLifeGrid implements CellGrid {
 
     @Override
     public void setThreads(int threads) {
-        for(int n=0; n<threads; n++){
+        this.threads = threads;
+        for (int n = 0; n < threads; n++) {
             Thread t = new Thread();
             t.run();
         }
@@ -72,30 +73,24 @@ public class GameOfLifeGrid implements CellGrid {
         this.grid = grilla;
     }
 
-    private void vivirOMorir(int col, int row, boolean[][] grilla) {
-
-        boolean[] vecinos = new boolean[10];
-        try {
-            vecinos[0] = grid[col - 1][row - 1];
-            vecinos[1] = grid[col][row - 1];
-            vecinos[2] = grid[col + 1][row - 1];
-            vecinos[3] = grid[col - 1][row];
-            vecinos[4] = grid[col + 1][row];
-            vecinos[5] = grid[col - 1][row + 1];
-            vecinos[6] = grid[col][row + 1];
-            vecinos[7] = grid[col + 1][row + 1];
-        } catch (Exception e) {
-            //
-        }
-
+    private synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
 
         int vecinasVivas = 0;
 
-        for (int elem = 0; elem <= 7; elem++) {
-            if (vecinos[elem] == true) {
-                vecinasVivas++;
+        int rowStart  = Math.max( row - 1, 0   );
+        int rowFinish = Math.min( row + 1, grid[0].length - 1 );
+        int colStart  = Math.max( col - 1, 0   );
+        int colFinish = Math.min( col + 1, grid.length - 1 );
+
+        for ( int curRow = rowStart; curRow <= rowFinish; curRow++ ) {
+            for ( int curCol = colStart; curCol <= colFinish; curCol++ ) {
+                if(grid[curCol][curRow] && (col != curCol || row != curRow)){
+                    vecinasVivas++;
+                }
             }
         }
+
+
         if (grid[col][row]) {
             this.celdaVivaViveOMuere(col, row, vecinasVivas, grilla);
         } else {
@@ -104,13 +99,13 @@ public class GameOfLifeGrid implements CellGrid {
 
     }
 
-    private void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
+    private synchronized void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas == 3) {
             grilla[col][row] = true;
         }
     }
 
-    private void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
+    private synchronized void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas < 2) {
             grilla[col][row] = false;
         }
