@@ -2,23 +2,30 @@ package edu.unq.pconc.gameoflife.solution;
 
 import edu.unq.pconc.gameoflife.CellGrid;
 import javafx.scene.control.Cell;
+import sun.plugin.javascript.navig.Array;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Created by coord-inf on 04/11/16.
  */
 public class GameOfLifeGrid implements CellGrid {
     private Dimension dimension;
-    private boolean grid[][];
+    public boolean[][] grid;
     private int generations;
     private int threads;
+    public  int threadsActivos;
 //    private Dimension dimension = new Dimension(50,50);
 
     public GameOfLifeGrid() {
         this.dimension = new Dimension();
         this.grid = new boolean[0][0];
         this.generations = 0;
+        this.threads = 0;
+        this.threadsActivos = 0;
     }
 
     @Override
@@ -50,10 +57,6 @@ public class GameOfLifeGrid implements CellGrid {
     @Override
     public void setThreads(int threads) {
         this.threads = threads;
-        for (int n = 0; n < threads; n++) {
-            Thread t = new Thread();
-            t.run();
-        }
     }
 
     @Override
@@ -64,57 +67,35 @@ public class GameOfLifeGrid implements CellGrid {
     @Override
     public void next() {
         boolean[][] grilla = new boolean[(int) this.dimension.getWidth()][(int) this.dimension.getHeight()];
-        for (int row = 0; row < this.grid.length; row++) {
-            for (int col = 0; col < this.grid[0].length; col++) {
-                this.vivirOMorir(row, col, grilla);
+        this.distribuirTrabajoEquitativamente(grilla);
+
+        while(this.hayThreadsTrabajando()){
+            synchronized(this){
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         this.generations++;
         this.grid = grilla;
+        this.threadsActivos = this.threads;
     }
 
-    private synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
+    private synchronized void distribuirTrabajoEquitativamente(boolean[][] grilla) {
+        boolean[][] arrayPartition = grid;
+        List<boolean[][]> arrayPartition2 = new ArrayList<boolean[][]>();
+        this.threadsActivos = this.threads;
 
-        int vecinasVivas = 0;
-
-        int rowStart  = Math.max( row - 1, 0   );
-        int rowFinish = Math.min( row + 1, grid[0].length - 1 );
-        int colStart  = Math.max( col - 1, 0   );
-        int colFinish = Math.min( col + 1, grid.length - 1 );
-
-        for ( int curRow = rowStart; curRow <= rowFinish; curRow++ ) {
-            for ( int curCol = colStart; curCol <= colFinish; curCol++ ) {
-                if(grid[curCol][curRow] && (col != curCol || row != curRow)){
-                    vecinasVivas++;
-                }
-            }
-        }
-
-
-        if (grid[col][row]) {
-            this.celdaVivaViveOMuere(col, row, vecinasVivas, grilla);
-        } else {
-            this.celdaMuertaViveOMuere(col, row, vecinasVivas, grilla);
-        }
-
-    }
-
-    private synchronized void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
-        if (vecinasVivas == 3) {
-            grilla[col][row] = true;
+        for(int n = 0; n<this.threads; n++){
+            Thread t = new CheckerThread(this, arrayPartition, grilla);
+            t.start();
         }
     }
 
-    private synchronized void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
-        if (vecinasVivas < 2) {
-            grilla[col][row] = false;
-        }
-        if (vecinasVivas > 3) {
-            grilla[col][row] = false;
-
-        }
-        if (vecinasVivas == 3 || vecinasVivas == 2) {
-            grilla[col][row] = true;
-        }
+    private synchronized boolean hayThreadsTrabajando() {
+        return threadsActivos > 0;
     }
+
 }
