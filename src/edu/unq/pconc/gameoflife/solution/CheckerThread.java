@@ -21,7 +21,7 @@ public class CheckerThread extends Thread {
         this.gameOfLifeGrid.threadsActivos--;
         synchronized (gameOfLifeGrid) {
             if (this.gameOfLifeGrid.threadsActivos == 0) {
-                gameOfLifeGrid.notifyAll();
+                gameOfLifeGrid.notify();
             }
         }
         System.out.println(this.getId() + " : celdas a Checkear: " + this.cellsToCheck.size() );
@@ -29,9 +29,9 @@ public class CheckerThread extends Thread {
 
     public synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
         synchronized (gameOfLifeGrid) {
-            if (this.gameOfLifeGrid.threadsActivos == 0) {
+            while(this.gameOfLifeGrid.noTerminoDeAsignarTareas()) {
                 try {
-                    gameOfLifeGrid.wait();
+                    this.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
