@@ -1,28 +1,31 @@
 package edu.unq.pconc.gameoflife.solution;
 
-import edu.unq.pconc.gameoflife.GameOfLife;
+import java.util.List;
 
 /**
  * Created by leo on 06/11/16.
  */
 public class CheckerThread extends Thread {
     GameOfLifeGrid gameOfLifeGrid;
-    boolean[][] arrayPartition;
+    List<Celda> cellsToCheck;
     boolean[][] grilla;
 
-    public CheckerThread(GameOfLifeGrid gameOfLifeGrid, boolean[][] arrayPartition, boolean[][] grilla) {
+    public CheckerThread(GameOfLifeGrid gameOfLifeGrid, List<Celda> cellsToCheck, boolean[][] grilla) {
         this.gameOfLifeGrid = gameOfLifeGrid;
-        this.arrayPartition = arrayPartition;
+        this.cellsToCheck = cellsToCheck;
         this.grilla = grilla;
     }
 
     @Override
     public void run() {
-        for (int row = 0; row < this.arrayPartition.length; row++) {
-            for (int col = 0; col < this.arrayPartition[0].length; col++) {
+        for (Celda celda: cellsToCheck) {
+            this.vivirOMorir(celda.row,celda.column,grilla);
+        }
+        /*for (int row = 0; row < this.cellsToCheck.length; row++) {
+            for (int col = 0; col < this.cellsToCheck[0].length; col++) {
                 this.vivirOMorir(row,col,grilla);
             }
-        }
+        }*/
         System.out.println("here" + this.getId());
         this.gameOfLifeGrid.threadsActivos--;
         synchronized (gameOfLifeGrid){
@@ -33,7 +36,7 @@ public class CheckerThread extends Thread {
 
     }
 
-    public void vivirOMorir(int col, int row, boolean[][] grilla) {
+    public synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
 
         int vecinasVivas = 0;
 

@@ -57,6 +57,7 @@ public class GameOfLifeGrid implements CellGrid {
     @Override
     public void setThreads(int threads) {
         this.threads = threads;
+        this.threadsActivos = 0;
     }
 
     @Override
@@ -65,7 +66,7 @@ public class GameOfLifeGrid implements CellGrid {
     }
 
     @Override
-    public void next() {
+    public synchronized void next() {
         boolean[][] grilla = new boolean[(int) this.dimension.getWidth()][(int) this.dimension.getHeight()];
         this.distribuirTrabajoEquitativamente(grilla);
 
@@ -80,21 +81,50 @@ public class GameOfLifeGrid implements CellGrid {
         }
         this.generations++;
         this.grid = grilla;
-        this.threadsActivos = this.threads;
     }
 
-    private synchronized void distribuirTrabajoEquitativamente(boolean[][] grilla) {
-        boolean[][] arrayPartition = grid;
-        List<boolean[][]> arrayPartition2 = new ArrayList<boolean[][]>();
-        this.threadsActivos = this.threads;
+    private void distribuirTrabajoEquitativamente(boolean[][] grilla) {
+        List<Celda> celdas = new ArrayList<Celda>();
+        for (int row = 0; row < this.grid.length; row++) {
+            for (int col = 0; col < this.grid[0].length; col++) {
+                celdas.add(new Celda(col,row));
+            }
+        }
 
-        for(int n = 0; n<this.threads; n++){
-            Thread t = new CheckerThread(this, arrayPartition, grilla);
+        int totalCell = this.grid.length * this.grid[0].length;
+        int normalWorkForThreads = (Math.floorDiv(totalCell, this.threads));
+        int numberOfThreadsWithExtraWork = totalCell - (normalWorkForThreads * this.threads);
+        int extraWorkForThread = normalWorkForThreads + 1;
+        int numberOfThreadsWithNormalWork = this.threads - numberOfThreadsWithExtraWork;
+        System.out.println(totalCell);
+        System.out.println(numberOfThreadsWithExtraWork);
+        System.out.println(numberOfThreadsWithNormalWork);
+
+        int takeNexExtra = extraWorkForThread;
+
+        for(int n = 0; n<numberOfThreadsWithExtraWork; n++){
+
+            Thread t = new CheckerThread(this, celdas.subList(0, takeNexExtra), grilla);
+            System.out.println(extraWorkForThread);
+            takeNexExtra+=extraWorkForThread;
+            this.threadsActivos ++;
+            t.start();
+        }
+
+        int takeNexNormal = normalWorkForThreads;
+
+
+        for(int n = 0; n<numberOfThreadsWithNormalWork; n++){
+
+            Thread t = new CheckerThread(this, celdas.subList(0, takeNexNormal), grilla);
+            System.out.println(normalWorkForThreads);
+            takeNexNormal+=normalWorkForThreads;
+            this.threadsActivos++;
             t.start();
         }
     }
 
-    private synchronized boolean hayThreadsTrabajando() {
+    private boolean hayThreadsTrabajando() {
         return threadsActivos > 0;
     }
 
