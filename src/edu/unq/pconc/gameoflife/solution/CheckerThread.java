@@ -2,9 +2,6 @@ package edu.unq.pconc.gameoflife.solution;
 
 import java.util.List;
 
-/**
- * Created by leo on 06/11/16.
- */
 public class CheckerThread extends Thread {
     GameOfLifeGrid gameOfLifeGrid;
     List<Celda> cellsToCheck;
@@ -18,36 +15,38 @@ public class CheckerThread extends Thread {
 
     @Override
     public void run() {
-        for (Celda celda: cellsToCheck) {
-            this.vivirOMorir(celda.row,celda.column,grilla);
+        for (Celda celda : cellsToCheck) {
+            this.vivirOMorir(celda.row, celda.column, grilla);
         }
-        /*for (int row = 0; row < this.cellsToCheck.length; row++) {
-            for (int col = 0; col < this.cellsToCheck[0].length; col++) {
-                this.vivirOMorir(row,col,grilla);
-            }
-        }*/
-        System.out.println("here" + this.getId());
         this.gameOfLifeGrid.threadsActivos--;
-        synchronized (gameOfLifeGrid){
-            if(this.gameOfLifeGrid.threadsActivos == 0){
-                gameOfLifeGrid.notify();
+        synchronized (gameOfLifeGrid) {
+            if (this.gameOfLifeGrid.threadsActivos == 0) {
+                gameOfLifeGrid.notifyAll();
             }
         }
-
+        System.out.println(this.getId() + " : celdas a Checkear: " + this.cellsToCheck.size() );
     }
 
     public synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
-
+        synchronized (gameOfLifeGrid) {
+            if (this.gameOfLifeGrid.threadsActivos == 0) {
+                try {
+                    gameOfLifeGrid.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         int vecinasVivas = 0;
 
-        int rowStart  = Math.max( row - 1, 0   );
-        int rowFinish = Math.min( row + 1, this.gameOfLifeGrid.grid[0].length - 1 );
-        int colStart  = Math.max( col - 1, 0   );
-        int colFinish = Math.min( col + 1, this.gameOfLifeGrid.grid.length - 1 );
+        int rowStart = Math.max(row - 1, 0);
+        int rowFinish = Math.min(row + 1, this.gameOfLifeGrid.grid[0].length - 1);
+        int colStart = Math.max(col - 1, 0);
+        int colFinish = Math.min(col + 1, this.gameOfLifeGrid.grid.length - 1);
 
-        for ( int curRow = rowStart; curRow <= rowFinish; curRow++ ) {
-            for ( int curCol = colStart; curCol <= colFinish; curCol++ ) {
-                if(this.gameOfLifeGrid.grid[curCol][curRow] && (col != curCol || row != curRow)){
+        for (int curRow = rowStart; curRow <= rowFinish; curRow++) {
+            for (int curCol = colStart; curCol <= colFinish; curCol++) {
+                if (this.gameOfLifeGrid.grid[curCol][curRow] && (col != curCol || row != curRow)) {
                     vecinasVivas++;
                 }
             }

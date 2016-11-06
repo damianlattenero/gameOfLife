@@ -1,24 +1,18 @@
 package edu.unq.pconc.gameoflife.solution;
 
 import edu.unq.pconc.gameoflife.CellGrid;
-import javafx.scene.control.Cell;
-import sun.plugin.javascript.navig.Array;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * Created by coord-inf on 04/11/16.
- */
 public class GameOfLifeGrid implements CellGrid {
     private Dimension dimension;
     public boolean[][] grid;
     private int generations;
     private int threads;
-    public  int threadsActivos;
-//    private Dimension dimension = new Dimension(50,50);
+    public int threadsActivos;
+    private boolean noTerminoDeAsignarTareas;
 
     public GameOfLifeGrid() {
         this.dimension = new Dimension();
@@ -29,33 +23,33 @@ public class GameOfLifeGrid implements CellGrid {
     }
 
     @Override
-    public boolean getCell(int col, int row) {
+    public synchronized boolean getCell(int col, int row) {
         return grid[col][row];
     }
 
     @Override
-    public void setCell(int col, int row, boolean cell) {
+    public synchronized void setCell(int col, int row, boolean cell) {
         grid[col][row] = cell;
     }
 
     @Override
-    public Dimension getDimension() {
+    public synchronized Dimension getDimension() {
         return this.dimension;
     }
 
     @Override
-    public void resize(int widht, int height) {
+    public synchronized void resize(int widht, int height) {
         this.dimension = new Dimension(widht, height);
         this.grid = new boolean[widht][height];
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         this.grid = new boolean[this.getDimension().width][this.getDimension().height];
     }
 
     @Override
-    public void setThreads(int threads) {
+    public synchronized void setThreads(int threads) {
         this.threads = threads;
         this.threadsActivos = 0;
     }
@@ -70,8 +64,8 @@ public class GameOfLifeGrid implements CellGrid {
         boolean[][] grilla = new boolean[(int) this.dimension.getWidth()][(int) this.dimension.getHeight()];
         this.distribuirTrabajoEquitativamente(grilla);
 
-        while(this.hayThreadsTrabajando()){
-            synchronized(this){
+        while (this.hayThreadsTrabajando()) {
+            synchronized (this) {
                 try {
                     this.wait();
                 } catch (InterruptedException e) {
@@ -83,49 +77,68 @@ public class GameOfLifeGrid implements CellGrid {
         this.grid = grilla;
     }
 
-    private void distribuirTrabajoEquitativamente(boolean[][] grilla) {
+    private synchronized void distribuirTrabajoEquitativamente(boolean[][] grilla) {
         List<Celda> celdas = new ArrayList<Celda>();
         for (int row = 0; row < this.grid.length; row++) {
-            for (int col = 0; col < this.grid[0].length; col++) {
-                celdas.add(new Celda(col,row));
+            for (int col = 0; col < this.grid[row].length; col++) {
+                celdas.add(new Celda(col, row));
             }
         }
 
         int totalCell = this.grid.length * this.grid[0].length;
-        int normalWorkForThreads = (Math.floorDiv(totalCell, this.threads));
+        int normalWorkForThreads = (totalCell / this.threads);
+        int resto = (totalCell % this.threads);
         int numberOfThreadsWithExtraWork = totalCell - (normalWorkForThreads * this.threads);
         int extraWorkForThread = normalWorkForThreads + 1;
         int numberOfThreadsWithNormalWork = this.threads - numberOfThreadsWithExtraWork;
-        System.out.println(totalCell);
-        System.out.println(numberOfThreadsWithExtraWork);
-        System.out.println(numberOfThreadsWithNormalWork);
 
-        int takeNexExtra = extraWorkForThread;
+        List<Thread> threads = new ArrayList<>();
 
-        for(int n = 0; n<numberOfThreadsWithExtraWork; n++){
-
-            Thread t = new CheckerThread(this, celdas.subList(0, takeNexExtra), grilla);
-            System.out.println(extraWorkForThread);
-            takeNexExtra+=extraWorkForThread;
-            this.threadsActivos ++;
-            t.start();
-        }
-
-        int takeNexNormal = normalWorkForThreads;
-
-
-        for(int n = 0; n<numberOfThreadsWithNormalWork; n++){
-
-            Thread t = new CheckerThread(this, celdas.subList(0, takeNexNormal), grilla);
-            System.out.println(normalWorkForThreads);
-            takeNexNormal+=normalWorkForThreads;
+        this.noTerminoDeAsignarTareas = true;
+        threads.addAll(this.assignWork(numberOfThreadsWithNormalWork, normalWorkForThreads, celdas, grilla));
+        threads.addAll(this.assignWork(numberOfThreadsWithExtraWork, extraWorkForThread, celdas, grilla));
+        this.noTerminoDeAsignarTareas = false;
+        this.notifyAll();
+        for (Thread t :
+                threads) {
             this.threadsActivos++;
             t.start();
         }
     }
 
-    private boolean hayThreadsTrabajando() {
+    synchronized private  List<Thread> assignWork(int numberOfThreads, int workForThreads, List<Celda> celdas, boolean[][] grilla) {
+        List<Thread> threads = new ArrayList<>();
+
+        for (int n = 0; n < numberOfThreads
+                ; n++) {
+
+            List<Celda> work = this.takeN(workForThreads, celdas);
+            System.out.println(celdas.size() + "tamaño antes remove");
+            celdas.removeAll(work);
+            System.out.println(celdas.size() + "tamaño desp remove");
+            Thread t = new CheckerThread(this, work, grilla);
+            threads.add(t);
+        }
+
+
+
+        return threads;
+
+    }
+
+    private synchronized List<Celda> takeN(int workForThreads, List<Celda> celdas) {
+        List<Celda> ret = new ArrayList<>();
+        for (int n = 0; n < workForThreads; n++) {
+            ret.add(celdas.get(n));
+        }
+        return ret;
+    }
+
+    private synchronized boolean hayThreadsTrabajando() {
         return threadsActivos > 0;
     }
 
+    public boolean noTerminoDeAsignarTareas() {
+        return this.noTerminoDeAsignarTareas;
+    }
 }
