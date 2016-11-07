@@ -20,7 +20,7 @@ public class CheckerThread extends Thread {
         }
 
         synchronized (gameOfLifeGrid) {
-            this.gameOfLifeGrid.threadsActivos--;
+            this.gameOfLifeGrid.threadsActivos --;
             if (this.gameOfLifeGrid.threadsActivos == 0) {
                 gameOfLifeGrid.notify();
             }
