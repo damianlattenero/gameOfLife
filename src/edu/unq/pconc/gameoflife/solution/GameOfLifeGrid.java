@@ -38,9 +38,19 @@ public class GameOfLifeGrid implements CellGrid {
 
     @Override
     public synchronized void resize(int widht, int height) {
+        boolean[][] newGrid = new boolean[widht][height];
+        for (int row = 0; row < this.grid.length; row++) {
+            for (int col = 0; col < this.grid[row].length; col++) {
+                if(col < height && row < widht){
+                    newGrid[row][col] = grid[row][col];
+                }
+            }
+        }
+
         this.dimension = new Dimension(widht, height);
-        this.grid = new boolean[widht][height];
+        this.grid = newGrid;
     }
+
 
     @Override
     public synchronized void clear() {
@@ -105,7 +115,8 @@ public class GameOfLifeGrid implements CellGrid {
 
     }
 
-    synchronized private List<CheckerThread> assignWork(int numberOfThreads, int workForThreads, List<Celda> celdas, boolean[][] grilla) {
+    synchronized private List<CheckerThread> assignWork(int numberOfThreads, int workForThreads, List<
+            Celda> celdas, boolean[][] grilla) {
         List<CheckerThread> threads = new ArrayList<>();
 
         for (int n = 0; n < numberOfThreads

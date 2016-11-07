@@ -19,4 +19,5 @@ public class GameGridTest {
         Assert.assertEquals(gameOfLifeGrid.getDimension().getHeight(), 10, 0);
     }
 
+
 }
