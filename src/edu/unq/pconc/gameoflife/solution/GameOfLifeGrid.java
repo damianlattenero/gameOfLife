@@ -10,7 +10,7 @@ public class GameOfLifeGrid implements CellGrid {
     private Dimension dimension;
     public boolean[][] grid;
     private int generations;
-    private int threads;
+    public int threads;
     public int threadsActivos;
 
     public GameOfLifeGrid() {
