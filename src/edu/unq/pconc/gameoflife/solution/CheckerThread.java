@@ -18,8 +18,9 @@ public class CheckerThread extends Thread {
         for (Celda celda : cellsToCheck) {
             this.vivirOMorir(celda.row, celda.column, grilla);
         }
-        this.gameOfLifeGrid.threadsActivos--;
+
         synchronized (gameOfLifeGrid) {
+            this.gameOfLifeGrid.threadsActivos--;
             if (this.gameOfLifeGrid.threadsActivos == 0) {
                 gameOfLifeGrid.notify();
             }
@@ -28,15 +29,6 @@ public class CheckerThread extends Thread {
     }
 
     public synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
-        synchronized (gameOfLifeGrid) {
-            while(this.gameOfLifeGrid.noTerminoDeAsignarTareas()) {
-                try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
         int vecinasVivas = 0;
 
         int rowStart = Math.max(row - 1, 0);
