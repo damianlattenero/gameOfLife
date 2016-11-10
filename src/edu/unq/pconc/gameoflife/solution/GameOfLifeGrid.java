@@ -41,7 +41,7 @@ public class GameOfLifeGrid implements CellGrid {
         boolean[][] newGrid = new boolean[widht][height];
         for (int row = 0; row < this.grid.length; row++) {
             for (int col = 0; col < this.grid[row].length; col++) {
-                if(col < height && row < widht){
+                if (col < height && row < widht) {
                     newGrid[row][col] = grid[row][col];
                 }
             }
@@ -78,13 +78,11 @@ public class GameOfLifeGrid implements CellGrid {
             t.start();
         }
 
-        synchronized (this) {
-            while (this.hayThreadsTrabajando()) {
-                try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        while (this.hayThreadsTrabajando()) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         this.generations++;
@@ -123,9 +121,9 @@ public class GameOfLifeGrid implements CellGrid {
                 ; n++) {
 
             List<Celda> work = this.takeN(workForThreads, celdas);
-            System.out.println(celdas.size() + "tamaño antes remove");
+//            System.out.println(celdas.size() + "tamaño antes remove");
             celdas.removeAll(work);
-            System.out.println(celdas.size() + "tamaño desp remove");
+//            System.out.println(celdas.size() + "tamaño desp remove");
             CheckerThread t = new CheckerThread(this, work, grilla);
             threads.add(t);
         }
@@ -145,6 +143,13 @@ public class GameOfLifeGrid implements CellGrid {
 
     private synchronized boolean hayThreadsTrabajando() {
         return threadsActivos > 0;
+    }
+
+    public synchronized void termine() {
+        this.threadsActivos--;
+        if (this.threadsActivos == 0) {
+            notify();
+        }
     }
 
 }

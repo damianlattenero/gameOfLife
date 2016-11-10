@@ -19,16 +19,12 @@ public class CheckerThread extends Thread {
             this.vivirOMorir(celda.row, celda.column, grilla);
         }
 
-        synchronized (gameOfLifeGrid) {
-            this.gameOfLifeGrid.threadsActivos --;
-            if (this.gameOfLifeGrid.threadsActivos == 0) {
-                gameOfLifeGrid.notify();
-            }
-        }
-        System.out.println(this.getId() + " : celdas a Checkear: " + this.cellsToCheck.size() );
+        gameOfLifeGrid.termine();
+
+//        System.out.println(this.getId() + " : celdas a Checkear: " + this.cellsToCheck.size() );
     }
 
-    public synchronized void vivirOMorir(int col, int row, boolean[][] grilla) {
+    public void vivirOMorir(int col, int row, boolean[][] grilla) {
         int vecinasVivas = 0;
 
         int rowStart = Math.max(row - 1, 0);
@@ -53,13 +49,13 @@ public class CheckerThread extends Thread {
 
     }
 
-    private synchronized void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
+    private void celdaMuertaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas == 3) {
             grilla[col][row] = true;
         }
     }
 
-    private synchronized void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
+    private void celdaVivaViveOMuere(int col, int row, int vecinasVivas, boolean[][] grilla) {
         if (vecinasVivas < 2) {
             grilla[col][row] = false;
         }
